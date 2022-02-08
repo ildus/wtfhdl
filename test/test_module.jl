@@ -1,11 +1,11 @@
 module TestModule
 
-push!(LOAD_PATH, abspath(dirname(@__FILE__) * "/.."))
-
-using HDL
+include("../HDL.jl/src/HDL.jl")
+using .HDL
 
 top = component("top") do
-	clk = signal(5)
+	clk = signal()
+	a = signal(5)
 
 	sync(posedge(clk)) do
 		when() do
@@ -21,5 +21,8 @@ top = component("top") do
 	comb() do
 	end
 end
+
+s = synth(top)
+println(s)
 
 end
