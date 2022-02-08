@@ -1,29 +1,25 @@
 module TestModule
 
-include("../src/hdl.jl")
+push!(LOAD_PATH, abspath(dirname(@__FILE__) * "/.."))
 
-using .HDL
+using HDL
 
-function run_test()
-	hdl = Signal()
-	println("test")
-end
+top = component("top") do
+	clk = signal(5)
 
-clk = Signal(5)
+	sync(posedge(clk)) do
+		when() do
+			a <= a + 1
 
-sync() do
-	when() do
-		a <= a + 1
-
-		otherwise() do
-		end
-		otherwise() do
+			otherwise() do
+			end
+			otherwise() do
+			end
 		end
 	end
-end
 
-comb() do
-	
+	comb() do
+	end
 end
 
 end

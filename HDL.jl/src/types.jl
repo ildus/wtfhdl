@@ -1,8 +1,13 @@
-module Types
+struct Component
+	name::String
+end
 
-export Signal, Condition, SyncCondition
+mutable struct Block
+	sync::Bool
+end
 
 struct Signal
+	mod::Component
 	width::Int32
 end
 
@@ -12,6 +17,4 @@ end
 struct SyncCondition
 	signal::Signal
 	posedge::Bool
-end
-
 end
