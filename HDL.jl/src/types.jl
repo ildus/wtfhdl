@@ -1,8 +1,10 @@
 abstract type LValue end
 abstract type Scope end
+abstract type Bundle end
 
 struct Signal <: LValue
-    width::Int32
+    width::Int64
+	pin::Int64
 end
 
 struct Slice <: LValue
@@ -39,9 +41,11 @@ mutable struct Block <: Scope
     scopes::Array{ConditionBlock}
 end
 
-struct Component
+mutable struct Component{T <: Union{Bundle,Nothing}}
     name::String
-    scopes::Array{Block}
+	scopes::Array{Block}
+	args::Type
+	bundle::Union{T,Nothing}
 end
 
 mutable struct CurrentScope

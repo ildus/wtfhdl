@@ -1,5 +1,12 @@
 scope = CurrentScope(nothing, nothing, nothing)
 
+function init(f::Function, c::Component)
+	prev = scope.component
+	scope.component = c
+	f()
+	scope.component = prev
+end
+
 function sync(f::Function, cond::SyncCondition)
 	block = Block(sync=true, cond=cond)
 	push!(scope.component.scopes, block)
@@ -21,12 +28,10 @@ end
 function otherwise(::Any)
 end
 
-function component(::Any, name::String)
-	c = Component(name, [])
+function component(f::Function, name, args=Nothing)
+	c = Component{args}(name, [], args, nothing)
 	scope.component = c
+	f()
+	scope.component = nothing
 	return c
-end
-
-function signal(width::UInt8=0x1)
-	return Signal(width=width)
 end

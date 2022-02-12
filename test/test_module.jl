@@ -1,16 +1,28 @@
+#!/usr/bin/env julia
+
 module TestModule
 
 include("../HDL.jl/src/HDL.jl")
 using .HDL
 
+struct RAM <: HDL.Bundle
+	clk
+	addr
+	write
+	val
+end
+
+ram = component("ram", RAM) do
+end
+
 top = component("top") do
-	clk = signal()
-	a = signal(5)
+	clk = input()
+
+	ram_ctrl = RAM(clk, signal(5), signal(16), signal)
+	link(ram, ram_ctrl)
 
 	sync(posedge(clk)) do
 		when() do
-			a <= a + 1
-
 			otherwise() do
 			end
 			otherwise() do
