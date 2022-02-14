@@ -2,17 +2,18 @@ module HDL
 
 export
 	Component,
-	signal,
-	input,
-	output,
-	component,
-	sync,
 	comb,
-	when,
-	otherwise,
-	posedge,
+	component,
+	input,
+	link,
 	negedge,
-	synth
+	otherwise,
+	output,
+	posedge,
+	signal,
+	sync,
+	synth,
+	when
 
 include("signal.jl")
 include("flow.jl")

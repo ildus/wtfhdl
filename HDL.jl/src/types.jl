@@ -1,10 +1,13 @@
 abstract type LValue end
 abstract type Scope end
 abstract type Bundle end
+abstract type BaseComponent end
 
 struct Signal <: LValue
     width::Int64
 	pin::Int64
+	component::Union{BaseComponent, Nothing}
+	name::String
 end
 
 struct Slice <: LValue
@@ -37,15 +40,19 @@ end
 
 mutable struct Block <: Scope
     sync::Bool
-    cond::SyncCondition
+	cond::Union{SyncCondition, Nothing}
     scopes::Array{ConditionBlock}
 end
 
-mutable struct Component{T <: Union{Bundle,Nothing}}
+mutable struct Component{T <: Union{Bundle,Nothing}} <: BaseComponent
     name::String
+	process::Function
 	scopes::Array{Block}
-	args::Type
+	ioType::Type
 	bundle::Union{T,Nothing}
+	inputs::Array{Signal}
+	links::Array{Component}
+	synthed::Bool
 end
 
 mutable struct CurrentScope

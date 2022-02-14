@@ -1,15 +1,21 @@
 include("types.jl")
 
-function signal(width=1; pin=0)
-	return Signal(width, pin)
+function signal(name, width=1; pin=0, component=nothing)
+	return Signal(width, pin, component, name)
 end
 
-function input(width=1; pin=0)
-	return signal(width, pin=pin)
+function input(name, width=1; pin=0)
+	if (scope.component === nothing)
+		error("input should be defined in a component scope")
+	end
+
+	s = signal(name, width, pin=pin, component=scope.component)
+	push!(scope.component.inputs, s)
+	return s
 end
 
-function output(width=1; pin=0)
-	return signal(width, pin=pin)
+function output(name, width=1; pin=0)
+	return signal(name, width, pin=pin)
 end
 
 function posedge(sig::Signal)

@@ -12,22 +12,21 @@ struct RAM <: HDL.Bundle
 	val
 end
 
-ram = component("ram", RAM) do
+ram = component("ram", RAM) do io
+	sync(posedge(io.clk)) do
+	end
+
+	comb() do
+	end
 end
 
 top = component("top") do
-	clk = input()
+	clk = input("clk")
 
-	ram_ctrl = RAM(clk, signal(5), signal(16), signal)
+	ram_ctrl = RAM(clk, signal("addr", 5), signal("write", 16), signal("val"))
 	link(ram, ram_ctrl)
 
 	sync(posedge(clk)) do
-		when() do
-			otherwise() do
-			end
-			otherwise() do
-			end
-		end
 	end
 
 	comb() do
