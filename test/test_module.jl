@@ -6,27 +6,40 @@ include("../HDL.jl/src/HDL.jl")
 using .HDL
 
 struct RAM <: HDL.Bundle
-	clk
-	addr
-	write
-	val
+	clk::Input
+	addr::Input
+	we::Input
+	wdata::Input
+	rdata::Output
 end
 
+# TODO: addr_with, data_witdh parameters
 ram = component("ram", RAM) do io
+	addr = signal()
+	bram = array(signal(), 10)
+
 	sync(posedge(io.clk)) do
+		addr <= io.addr
+
+		when(io.we) do
+			bram[io.addr] <= io.wdata
+		end
 	end
 
 	comb() do
+		io.rdata <= bram[addr]
 	end
 end
 
 top = component("top") do
-	clk = input("clk")
+	clk = input(name="clk")
+	ram_out = signal(5, name="ram_out")
 
-	ram_ctrl = RAM(clk, signal("addr", 5), signal("write", 16), signal("val"))
+	ram_ctrl = RAM(clk, signal(5), signal(16), signal())
 	link(ram, ram_ctrl)
 
 	sync(posedge(clk)) do
+		ram_out <= ram_ctrl.val + 1
 	end
 
 	comb() do

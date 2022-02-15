@@ -2,8 +2,30 @@ abstract type LValue end
 abstract type Scope end
 abstract type Bundle end
 abstract type BaseComponent end
+abstract type BaseSignal <: LValue end
 
-struct Signal <: LValue
+struct Signal <: BaseSignal
+    width::Int64
+	pin::Int64
+	component::Union{BaseComponent, Nothing}
+	name::String
+end
+
+struct Input <: BaseSignal
+    width::Int64
+	pin::Int64
+	component::Union{BaseComponent, Nothing}
+	name::String
+end
+
+struct Output <: BaseSignal
+    width::Int64
+	pin::Int64
+	component::Union{BaseComponent, Nothing}
+	name::String
+end
+
+struct InOut <: BaseSignal
     width::Int64
 	pin::Int64
 	component::Union{BaseComponent, Nothing}
@@ -50,7 +72,7 @@ mutable struct Component{T <: Union{Bundle,Nothing}} <: BaseComponent
 	scopes::Array{Block}
 	ioType::Type
 	bundle::Union{T,Nothing}
-	inputs::Array{Signal}
+	inputs::Array{Input}
 	links::Array{Component}
 	synthed::Bool
 end

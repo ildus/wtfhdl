@@ -11,6 +11,9 @@ export
 	output,
 	posedge,
 	signal,
+	Input,
+	Output,
+	InOut,
 	sync,
 	synth,
 	when

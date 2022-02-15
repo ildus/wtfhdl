@@ -14,7 +14,7 @@ end
 
 function comb(f::Function)
 	if scope.component === nothing
-		error("a synchronous block can be defined only in a component")
+		error("an asynchronous block can be defined only in a component")
 	end
 
 	block = Block(false, nothing, [])
