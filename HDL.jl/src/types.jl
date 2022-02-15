@@ -4,50 +4,50 @@ abstract type Bundle end
 abstract type BaseComponent end
 abstract type BaseSignal <: LValue end
 
-struct Signal <: BaseSignal
+mutable struct Signal <: BaseSignal
     width::Int64
 	pin::Int64
-	component::Union{BaseComponent, Nothing}
 	name::String
 end
 
-struct Input <: BaseSignal
+mutable struct Input <: BaseSignal
     width::Int64
 	pin::Int64
-	component::Union{BaseComponent, Nothing}
 	name::String
 end
 
-struct Output <: BaseSignal
+mutable struct Output <: BaseSignal
     width::Int64
 	pin::Int64
-	component::Union{BaseComponent, Nothing}
 	name::String
 end
 
+# TODO: add methods
 struct InOut <: BaseSignal
     width::Int64
 	pin::Int64
-	component::Union{BaseComponent, Nothing}
 	name::String
 end
 
 struct Slice <: LValue
-    signal::Signal
+    signal::BaseSignal
 end
 
 struct SyncCondition
-    signal::Signal
+    signal::BaseSignal
     posedge::Bool
 end
 
-struct Condition end
-
 struct Op
-    a::Any
-    b::Any
+	a::Union{BaseSignal, Op}
+	b::Union{BaseSignal, Op, Nothing}
     op::String
-    unary::Bool
+end
+
+struct Condition
+	a::Union{BaseSignal, Op}
+	b::Union{BaseSignal, Op, Nothing}
+	op::String
 end
 
 struct Assign
@@ -73,6 +73,7 @@ mutable struct Component{T <: Union{Bundle,Nothing}} <: BaseComponent
 	ioType::Type
 	bundle::Union{T,Nothing}
 	inputs::Array{Input}
+	outputs::Array{Input}
 	links::Array{Component}
 	synthed::Bool
 end

@@ -31,17 +31,29 @@ function when(f::Function, cond::Condition)
 	return block
 end
 
+function when(f::Function, s::BaseSignal)
+	cond = Condition(s, nothing, "")
+	return when(f, cond)
+end
+
 function otherwise(::Any)
 end
 
 function component(f::Function, name::String, ioType=Nothing)
-	c = Component{ioType}(name, f, [], ioType, nothing, [], [], false)
+	c = Component{ioType}(name, f, [], ioType, nothing, [], [], [], false)
 	return c
 end
 
 function link(c::Component, b::Bundle)
 	if scope.component === nothing
 		error("link")
+	end
+
+	# extract names for signals
+	names = fieldnames(typeof(b))
+	for name in names
+		field = getfield(b, name)
+		field.name = string(name)
 	end
 
 	if c.bundle === nothing
