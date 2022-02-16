@@ -1,4 +1,4 @@
-scope = CurrentScope(nothing, nothing, nothing)
+scope = CurrentScope(nothing, nothing, nothing, 0)
 
 function sync(f::Function, cond::SyncCondition)
 	if scope.component === nothing
@@ -40,7 +40,7 @@ function otherwise(::Any)
 end
 
 function component(f::Function, name::String, ioType=Nothing)
-	c = Component{ioType}(name, f, [], ioType, nothing, [], [], [], false)
+	c = Component{ioType}(name, f, [], ioType, nothing, [], [], [], [], false)
 	return c
 end
 
@@ -54,6 +54,15 @@ function link(c::Component, b::Bundle)
 	for name in names
 		field = getfield(b, name)
 		field.name = string(name)
+		if field.created_from !== nothing && field.created_from.name == ""
+			field.created_from.name = c.name * "_" * string(name)
+		end
+
+		if isa(field, Input)
+			push!(c.inputs, field)
+		elseif isa(field, Output)
+			push!(c.outputs, field)
+		end
 	end
 
 	if c.bundle === nothing

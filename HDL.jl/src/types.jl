@@ -8,18 +8,21 @@ mutable struct Signal <: BaseSignal
     width::Int64
 	pin::Int64
 	name::String
+	created_from::Union{BaseSignal, Nothing}
 end
 
 mutable struct Input <: BaseSignal
     width::Int64
 	pin::Int64
 	name::String
+	created_from::Union{BaseSignal, Nothing}
 end
 
 mutable struct Output <: BaseSignal
     width::Int64
 	pin::Int64
 	name::String
+	created_from::Union{BaseSignal, Nothing}
 end
 
 # TODO: add methods
@@ -73,7 +76,8 @@ mutable struct Component{T <: Union{Bundle,Nothing}} <: BaseComponent
 	ioType::Type
 	bundle::Union{T,Nothing}
 	inputs::Array{Input}
-	outputs::Array{Input}
+	outputs::Array{Output}
+	signals::Array{Signal}
 	links::Array{Component}
 	synthed::Bool
 end
@@ -82,4 +86,5 @@ mutable struct CurrentScope
     component::Union{Component,Nothing}
     block::Union{Block,Nothing}
     conditional::Union{ConditionBlock,Nothing}
+	inst_counter
 end

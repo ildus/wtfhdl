@@ -1,26 +1,26 @@
 include("types.jl")
 
 function signal(width=1; pin=0, name="")
-	return Signal(width, pin, name)
+	s = Signal(width, pin, name, nothing)
+	if scope.component !== nothing
+		push!(scope.component.signals, s)
+	end
+	return s
 end
 
 function input(width=1; pin=0, name="")
-	if (scope.component === nothing)
-		error("input should be defined in a component scope")
+	s = Input(width, pin, name, nothing)
+	if scope.component !== nothing
+		push!(scope.component.inputs, s)
 	end
-
-	s = Input(width, pin, name)
-	push!(scope.component.inputs, s)
 	return s
 end
 
 function output(width=1; pin=0, name="")
-	if (scope.component === nothing)
-		error("input should be defined in a component scope")
+	s = Output(width, pin, name, nothing)
+	if scope.component !== nothing
+		push!(scope.component.outputs, s)
 	end
-
-	s = Output(width, pin, name)
-	push!(scope.component.outputs, s)
 	return s
 end
 
@@ -34,7 +34,20 @@ function negedge(sig::BaseSignal)
 	return cond
 end
 
-Base.convert(::Type{T}, s::Union{Signal, Output}) where {T<:Input} =
-	input(s.width, pin=s.pin, name=s.name)
-Base.convert(::Type{T}, s::Union{Signal, Input}) where {T<:Output} =
-	output(s.width, pin=s.pin, name=s.name)
+function Base.convert(::Type{T}, s::Union{Signal, Output}) where {T<:Input}
+	prev = scope.component
+	scope.component = nothing
+	res = input(s.width, pin=s.pin, name=s.name)
+	res.created_from = s
+	scope.component = prev
+	return res
+end
+
+function Base.convert(::Type{T}, s::Union{Signal, Input}) where {T<:Output}
+	prev = scope.component
+	scope.component = nothing
+	res = output(s.width, pin=s.pin, name=s.name)
+	res.created_from = s
+	scope.component = prev
+	return res
+end

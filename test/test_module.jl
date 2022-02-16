@@ -15,7 +15,7 @@ end
 
 # TODO: addr_with, data_witdh parameters
 ram = component("ram", RAM) do io
-	addr = signal()
+	addr = signal(io.addr.width, name="addr")
 	#bram = array(signal(), 10)
 
 	sync(posedge(io.clk)) do
@@ -31,8 +31,11 @@ ram = component("ram", RAM) do io
 	end
 end
 
+# TODO: add io for Top, with fields like Input{5}
 top = component("top") do
 	clk = input(name="clk")
+	led1 = output(name="led1")
+
 	ram_out = signal(5, name="ram_out")
 
 	ram_ctrl = RAM(clk, signal(5), signal(), signal(16), signal(16))
