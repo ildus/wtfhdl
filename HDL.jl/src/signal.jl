@@ -8,7 +8,11 @@ function signal(width=1; pin=0, name="")
 	return s
 end
 
-function input(width=1; pin=0, name="")
+function signal(name::String, width=1; pin=0)
+	return signal(width, pin=pin, name=name)
+end
+
+function input(name, width=1; pin=0)
 	s = Input(width, pin, name, nothing)
 	if scope.component !== nothing
 		push!(scope.component.inputs, s)
@@ -16,7 +20,15 @@ function input(width=1; pin=0, name="")
 	return s
 end
 
-function output(width=1; pin=0, name="")
+function copy(s::Input)
+	return Input(s.width, s.pin, s.name, s)
+end
+
+function copy(s::Output)
+	return Output(s.width, s.pin, s.name, s)
+end
+
+function output(name, width=1; pin=0)
 	s = Output(width, pin, name, nothing)
 	if scope.component !== nothing
 		push!(scope.component.outputs, s)
@@ -37,7 +49,7 @@ end
 function Base.convert(::Type{T}, s::Union{Signal, Output}) where {T<:Input}
 	prev = scope.component
 	scope.component = nothing
-	res = input(s.width, pin=s.pin, name=s.name)
+	res = input(s.name, s.width, pin=s.pin)
 	res.created_from = s
 	scope.component = prev
 	return res
@@ -46,7 +58,7 @@ end
 function Base.convert(::Type{T}, s::Union{Signal, Input}) where {T<:Output}
 	prev = scope.component
 	scope.component = nothing
-	res = output(s.width, pin=s.pin, name=s.name)
+	res = output(s.name, s.width, pin=s.pin)
 	res.created_from = s
 	scope.component = prev
 	return res

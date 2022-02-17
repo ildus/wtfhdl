@@ -5,7 +5,7 @@ module TestModule
 include("../HDL.jl/src/HDL.jl")
 using .HDL
 
-struct RAM <: HDL.Bundle
+mutable struct RAM <: HDL.Bundle
 	clk::Input
 	addr::Input
 	we::Input
@@ -15,7 +15,7 @@ end
 
 # TODO: addr_with, data_witdh parameters
 ram = component("ram", RAM) do io
-	addr = signal(io.addr.width, name="addr")
+	addr = signal("addr", io.addr.width)
 	#bram = array(signal(), 10)
 
 	sync(posedge(io.clk)) do
@@ -33,10 +33,10 @@ end
 
 # TODO: add io for Top, with fields like Input{5}
 top = component("top") do
-	clk = input(name="clk")
-	led1 = output(name="led1")
+	clk = input("clk_locked")
+	led1 = output("led1")
 
-	ram_out = signal(5, name="ram_out")
+	ram_out = signal("ram_out", 5)
 
 	ram_ctrl = RAM(clk, signal(5), signal(), signal(16), signal(16))
 	link(ram, ram_ctrl)

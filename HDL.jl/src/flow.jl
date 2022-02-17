@@ -49,6 +49,16 @@ function link(c::Component, b::Bundle)
 		error("link")
 	end
 
+	names = fieldnames(typeof(b))
+	for name in names
+		field = getfield(b, name)
+		if field.created_from === nothing
+			# we should make a copy of a field and use in the bundle instead of original signal
+			field_copy = copy(field)
+			setfield!(b, name, field_copy)
+		end
+	end
+
 	# extract names for signals
 	names = fieldnames(typeof(b))
 	for name in names

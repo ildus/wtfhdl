@@ -24,14 +24,14 @@ function synth(c::Component)
 
 	s *= "module " * c.name * "(\n"
 	for (i, input) in enumerate(c.inputs)
-		s *= "\t input " * synth(input)
+		s *= "\t input " * synth_def(input)
 		if (i != length(c.inputs) || length(c.outputs) > 0)
 			s *= ","
 		end
 		s *= "\n"
 	end
 	for (i, output) in enumerate(c.outputs)
-		s *= "\t output " * synth(output)
+		s *= "\t output " * synth_def(output)
 		if (i != length(c.outputs))
 			s *= ","
 		end
@@ -39,7 +39,7 @@ function synth(c::Component)
 	end
 	s *= ");\n"
 	for sig in c.signals
-		s *= synth(sig)
+		s *= synth_def(sig)
 		s *= ";\n"
 	end
 	s *= "\n"
@@ -89,6 +89,10 @@ function synth(b::Block)
 		s *= "always_comb begin\n"
 	end
 
+	for scope in b.scopes
+		s *= synth(scope)
+	end
+
 	s *= "end\n"
 	return s
 end
@@ -103,7 +107,7 @@ function synth(c::SyncCondition)
 	return s
 end
 
-function synth(sig::BaseSignal)
+function synth_def(sig::BaseSignal)
 	s = "logic "
 	if sig.name == ""
 		error("signal doesn't have a name!")
@@ -114,5 +118,28 @@ function synth(sig::BaseSignal)
 	else
 		s *= sig.name
 	end
+	return s
+end
+
+function synth(sig::BaseSignal)
+	return sig.name
+end
+
+function synth(b::ConditionBlock)
+	s = "if "
+	s *= synth(b.cond)
+	s *= " begin\n"
+	s *= "end\n"
+	return s
+end
+
+function synth(c::Condition)
+	s = "("
+	if c.b === nothing
+		# unary
+		s *= c.op
+		s *= synth(c.a)
+	end
+	s *= ")"
 	return s
 end
