@@ -3,7 +3,7 @@ import Base.:+
 
 export synth
 
-function synth(c::Component)
+function synth(c::Component, b::Union{Bundle, Nothing}=nothing)
 	if c.synthed
 		return ""
 	end
@@ -13,7 +13,11 @@ function synth(c::Component)
 	if nargs == 1
 		scope.component.process()
 	elseif nargs == 2
-		scope.component.process(c.bundle)
+		if c.bundle !== nothing
+			scope.component.process(c.bundle)
+		elseif b !== nothing
+			scope.component.process(b)
+		end
 	else
 		error("could not dispatch component's body function")
 	end

@@ -61,10 +61,6 @@ function component(f::Function, name::String, ioType=Nothing)
 end
 
 function link(c::Component, b::Bundle)
-	if scope.component === nothing
-		error("link")
-	end
-
 	names = fieldnames(typeof(b))
 	for name in names
 		field = getfield(b, name)
@@ -99,5 +95,7 @@ function link(c::Component, b::Bundle)
 		end
 	end
 
-	push!(scope.component.links, c)
+	if scope.component !== nothing
+		push!(scope.component.links, c)
+	end
 end
