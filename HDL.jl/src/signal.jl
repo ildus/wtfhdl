@@ -1,5 +1,7 @@
 include("types.jl")
 
+export array, signal, input, output, posedge, negedge
+
 function signal(width=1; pin=0, name="")
 	s = Signal(width, pin, name, nothing)
 	if scope.component !== nothing
@@ -18,6 +20,14 @@ function input(name, width=1; pin=0)
 		push!(scope.component.inputs, s)
 	end
 	return s
+end
+
+function array(name, element_width, count)
+	arr = SignalArray(name, element_width, count)
+	if scope.component !== nothing
+		push!(scope.component.arrays, arr)
+	end
+	return arr
 end
 
 function copy(s::Input)

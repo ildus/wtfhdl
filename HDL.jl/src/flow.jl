@@ -1,33 +1,46 @@
+export
+	comb,
+	component,
+	link,
+	otherwise,
+	sync,
+	when
+
 scope = CurrentScope(nothing, nothing, nothing, 0)
 
-function sync(f::Function, cond::SyncCondition)
+function new_block(f::Function, cond::Union{SyncCondition,Nothing}=nothing, sync=false, block_type="an asynchronous")
 	if scope.component === nothing
-		error("a synchronous block can be defined only in a component")
+		error(block_type * " block can be defined only in a component")
 	end
 
-	block = Block(true, cond, [])
+	block = Block(sync, cond, [], [])
 	push!(scope.component.scopes, block)
 	scope.block = block
+	scope.current = block
 	f()
+	scope.current = nothing
 	return block
+end
+
+function sync(f::Function, cond::SyncCondition)
+	return new_block(f, cond, true, "a synchronous")
 end
 
 function comb(f::Function)
-	if scope.component === nothing
-		error("an asynchronous block can be defined only in a component")
-	end
-
-	block = Block(false, nothing, [])
-	push!(scope.component.scopes, block)
-	scope.block = block
-	f()
-	return block
+	return new_block(f)
 end
 
 function when(f::Function, cond::Condition)
-	block = ConditionBlock(cond, [])
-	push!(scope.block.scopes, block)
+	if scope.block === nothing
+		error("`when` expects parent sync or comb blocks")
+	end
+
+	block = ConditionBlock(cond, [], [])
+	prev_scope = scope.current
+	scope.current = block
 	f()
+	scope.current = prev_scope
+	push!(scope.block.scopes, block)
 	return block
 end
 
@@ -37,10 +50,13 @@ function when(f::Function, s::BaseSignal)
 end
 
 function otherwise(::Any)
+	if scope.block === nothing
+		error("`otherwise` expects parent `when` block")
+	end
 end
 
 function component(f::Function, name::String, ioType=Nothing)
-	c = Component{ioType}(name, f, [], ioType, nothing, [], [], [], [], false)
+	c = Component{ioType}(name, f, [], ioType, nothing, [], [], [], [], [], false)
 	return c
 end
 

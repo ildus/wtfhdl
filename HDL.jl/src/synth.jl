@@ -1,6 +1,8 @@
 using Printf
 import Base.:+
 
+export synth
+
 function synth(c::Component)
 	if c.synthed
 		return ""
@@ -42,7 +44,11 @@ function synth(c::Component)
 		s *= synth_def(sig)
 		s *= ";\n"
 	end
-	s *= "\n"
+	for arr in c.arrays
+		s *= synth(arr)
+		s *= "\n"
+	end
+
 	for b in c.scopes
 		s *= synth(b)
 	end
@@ -89,8 +95,17 @@ function synth(b::Block)
 		s *= "always_comb begin\n"
 	end
 
-	for scope in b.scopes
-		s *= synth(scope)
+	if length(b.assigns) > 0
+		for a in b.assigns
+			s *= synth(a, sync=b.sync)
+			s *= "\n"
+		end
+	end
+
+	if length(b.scopes) > 0
+		for scope in b.scopes
+			s *= synth(scope)
+		end
 	end
 
 	s *= "end\n"
@@ -125,10 +140,18 @@ function synth(sig::BaseSignal)
 	return sig.name
 end
 
+function synth(sig::ArrayIndex)
+	return sig.array.name * "[" * synth(sig.index) * "]"
+end
+
 function synth(b::ConditionBlock)
 	s = "if "
 	s *= synth(b.cond)
 	s *= " begin\n"
+	for a in b.assigns
+		s *= synth(a, sync=scope.block.sync)
+		s *= "\n"
+	end
 	s *= "end\n"
 	return s
 end
@@ -141,5 +164,20 @@ function synth(c::Condition)
 		s *= synth(c.a)
 	end
 	s *= ")"
+	return s
+end
+
+function synth(a::Assign; sync::Bool)
+	op = sync ? " <= " : " = "
+	s = ""
+	s *= synth(a.left)
+	s *= op
+	s *= synth(a.right)
+	return s
+end
+
+# logic [DATA_WIDTH - 1:0] bram [0 : 2 ** ADDR_WIDTH - 1];
+function synth(arr::SignalArray)
+	s = @sprintf("logic [%d:0] %s [0:%d];", arr.element_width - 1, arr.name, arr.count - 1)
 	return s
 end

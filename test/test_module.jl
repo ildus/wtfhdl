@@ -15,19 +15,19 @@ end
 
 # TODO: addr_with, data_witdh parameters
 ram = component("ram", RAM) do io
-	addr = signal("addr", io.addr.width)
-	#bram = array(signal(), 10)
+	addr = signal("ram_addr", io.addr.width)
+	bram = array("bram", io.rdata.width, 10)
 
 	sync(posedge(io.clk)) do
-		#addr <= io.addr
+		addr <= io.addr
 
 		when(io.we) do
-			#bram[io.addr] <= io.wdata
+			bram[io.addr] <= io.wdata
 		end
 	end
 
 	comb() do
-		#io.rdata <= bram[addr]
+		io.rdata <= bram[addr]
 	end
 end
 

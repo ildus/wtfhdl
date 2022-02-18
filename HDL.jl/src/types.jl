@@ -1,3 +1,8 @@
+export
+	Input,
+	Output,
+	InOut
+
 abstract type LValue end
 abstract type Scope end
 abstract type Bundle end
@@ -25,6 +30,12 @@ mutable struct Output <: BaseSignal
 	created_from::Union{BaseSignal, Nothing}
 end
 
+mutable struct SignalArray
+	name::String
+	element_width::Int64
+	count::Int64
+end
+
 # TODO: add methods
 struct InOut <: BaseSignal
     width::Int64
@@ -47,6 +58,11 @@ struct Op
     op::String
 end
 
+struct ArrayIndex <: BaseSignal
+	array::SignalArray
+	index::Union{BaseSignal, Op, Number}
+end
+
 struct Condition
 	a::Union{BaseSignal, Op}
 	b::Union{BaseSignal, Op, Nothing}
@@ -55,18 +71,20 @@ end
 
 struct Assign
     left::LValue
-    right::Op
+	right::Union{Op, BaseSignal}
 end
 
 mutable struct ConditionBlock <: Scope
     cond::Condition
     scopes::Array{ConditionBlock}
+	assigns::Array{Assign}
 end
 
 mutable struct Block <: Scope
     sync::Bool
 	cond::Union{SyncCondition, Nothing}
     scopes::Array{ConditionBlock}
+	assigns::Array{Assign}
 end
 
 mutable struct Component{T <: Union{Bundle,Nothing}} <: BaseComponent
@@ -78,6 +96,7 @@ mutable struct Component{T <: Union{Bundle,Nothing}} <: BaseComponent
 	inputs::Array{Input}
 	outputs::Array{Output}
 	signals::Array{Signal}
+	arrays::Array{SignalArray}
 	links::Array{Component}
 	synthed::Bool
 end
@@ -85,6 +104,6 @@ end
 mutable struct CurrentScope
     component::Union{Component,Nothing}
     block::Union{Block,Nothing}
-    conditional::Union{ConditionBlock,Nothing}
+    current::Union{Scope,Nothing}
 	inst_counter
 end
