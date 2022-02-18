@@ -10,7 +10,7 @@ end
 
 function add_line(s::String, fmt::String, args...)
 	f = Printf.Format(fmt)
-	return s *= (" " ^ (scope.level * 4)) * Printf.format(f, args...) * "\n"
+	return s *= (" " ^ (scope.level * 4)) * Printf.format(f, args...) * ";\n"
 end
 
 function synth(c::Component, b::Union{Bundle, Nothing}=nothing)
@@ -62,23 +62,22 @@ function synth(c::Component, b::Union{Bundle, Nothing}=nothing)
 		end
 	end
 
-	if length(c.signals) > 0
+	if length(c.arrays) > 0
 		s *= "\n"
 		for arr in c.arrays
 			s = add_line(s, "%s", synth(arr))
 		end
 	end
 
-	if length(c.signals) > 0
-		s *= "\n"
+	if length(c.scopes) > 0
 		for b in c.scopes
-			s = add_line(s, "%s", synth(b))
+			s *= "\n"
+			s = add_text(s, "%s", synth(b))
 		end
 	end
 
 	# modules
 	if length(c.links) > 0
-		s *= "\n"
 		for l in c.links
 			inst_name = l.name * "_" * string(scope.inst_counter)
 			scope.inst_counter = scope.inst_counter + 1
@@ -177,16 +176,55 @@ function synth(sig::ArrayIndex)
 end
 
 function synth(b::ConditionBlock)
-	s = "if "
-	s *= synth(b.cond)
-	s *= " begin\n"
+	otherwise_clean = nothing
+
+	s = ""
+	if b.cond_type == ct_when
+		s *= "if "
+		s *= synth(b.cond)
+		s *= " "
+	elseif b.cond_type == ct_otherwise && b.cond !== nothing
+		s *= "else if "
+		s *= synth(b.cond)
+		s *= " "
+	else
+		s *= "else "
+	end
+
+	s *= "begin\n"
 
 	scope.level += 1
 	for a in b.assigns
 		s = add_line(s, "%s", synth(a, sync=scope.block.sync))
 	end
+
+	for child in b.scopes
+		if isa(child, ConditionBlock) && child.cond_type != ct_otherwise
+			s = add_text(s, "%s", synth(child))
+		end
+	end
+
 	scope.level -= 1
-	s = add_line(s, "%s", "end")
+	s = add_text(s, "%s", "end\n")
+
+	for child in b.scopes
+		if isa(child, ConditionBlock) && child.cond_type == ct_otherwise
+			if child.cond === nothing
+				if otherwise_clean === nothing
+					otherwise_clean = child
+				else
+					error("only one `otherwise` without any conditions (as `else`) is possible")
+				end
+			else
+				s *= add_text(s, "%s", synth(child))
+			end
+		end
+	end
+
+	if otherwise_clean !== nothing
+		s = add_text(s, "%s", synth(otherwise_clean))
+	end
+
 	return s
 end
 
