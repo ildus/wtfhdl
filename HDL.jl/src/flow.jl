@@ -6,8 +6,6 @@ export
 	sync,
 	when
 
-scope = CurrentScope(nothing, nothing, nothing, 0)
-
 function new_block(f::Function, cond::Union{SyncCondition,Nothing}=nothing, sync=false, block_type="an asynchronous")
 	if scope.component === nothing
 		error(block_type * " block can be defined only in a component")
@@ -23,25 +21,35 @@ function new_block(f::Function, cond::Union{SyncCondition,Nothing}=nothing, sync
 end
 
 function sync(f::Function, cond::SyncCondition)
-	return new_block(f, cond, true, "a synchronous")
+	new_block(f, cond, true, "a synchronous")
 end
 
 function comb(f::Function)
-	return new_block(f)
+	new_block(f)
+end
+
+function new_conditional(f::Function, cond::Union{Condition, Nothing}, cond_type::ConditionType)
+	current_scope = scope.current
+	if current_scope === nothing
+		current_scope = scope.block
+	end
+
+	if current_scope === nothing
+		error("`when` expects a parent scope")
+	end
+
+	conditional = ConditionBlock(cond, cond_type, [], [])
+	prev_scope = scope.current
+	scope.current = conditional
+	f()
+	scope.current = prev_scope
+	push!(current_scope.scopes, conditional)
+
+	return conditional
 end
 
 function when(f::Function, cond::Condition)
-	if scope.block === nothing
-		error("`when` expects parent sync or comb blocks")
-	end
-
-	block = ConditionBlock(cond, [], [])
-	prev_scope = scope.current
-	scope.current = block
-	f()
-	scope.current = prev_scope
-	push!(scope.block.scopes, block)
-	return block
+	new_conditional(f, cond, ct_when)
 end
 
 function when(f::Function, s::BaseSignal)
@@ -49,15 +57,17 @@ function when(f::Function, s::BaseSignal)
 	return when(f, cond)
 end
 
-function otherwise(::Any)
-	if scope.block === nothing
-		error("`otherwise` expects parent `when` block")
-	end
+function otherwise(f::Function, cond::Union{Condition, Nothing}=nothing)
+	new_conditional(f, cond, ct_otherwise)
+end
+
+function otherwise(f::Function, s::BaseSignal)
+	cond = Condition(s, nothing, "")
+	return otherwise(f, cond)
 end
 
 function component(f::Function, name::String, ioType=Nothing)
-	c = Component{ioType}(name, f, [], ioType, nothing, [], [], [], [], [], false)
-	return c
+	Component{ioType}(name, f, [], ioType, nothing, [], [], [], [], [], false)
 end
 
 function link(c::Component, b::Bundle)

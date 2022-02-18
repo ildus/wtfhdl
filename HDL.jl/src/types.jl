@@ -9,11 +9,14 @@ abstract type Bundle end
 abstract type BaseComponent end
 abstract type BaseSignal <: LValue end
 
+SignalDefault = Union{Integer, Nothing}
+
 mutable struct Signal <: BaseSignal
     width::Int64
 	pin::Int64
 	name::String
 	created_from::Union{BaseSignal, Nothing}
+	default::SignalDefault
 end
 
 mutable struct Input <: BaseSignal
@@ -28,6 +31,7 @@ mutable struct Output <: BaseSignal
 	pin::Int64
 	name::String
 	created_from::Union{BaseSignal, Nothing}
+	default::SignalDefault
 end
 
 mutable struct SignalArray
@@ -58,24 +62,32 @@ struct Op
     op::String
 end
 
+Operand = Union{BaseSignal, Op, Integer}
+
 struct ArrayIndex <: BaseSignal
 	array::SignalArray
-	index::Union{BaseSignal, Op, Number}
+	index::Operand
 end
 
 struct Condition
 	a::Union{BaseSignal, Op}
-	b::Union{BaseSignal, Op, Nothing}
+	b::Union{Operand, Nothing}
 	op::String
 end
 
 struct Assign
     left::LValue
-	right::Union{Op, BaseSignal}
+	right::Operand
+end
+
+@enum ConditionType begin
+	ct_when
+	ct_otherwise
 end
 
 mutable struct ConditionBlock <: Scope
-    cond::Condition
+	cond::Union{Condition, Nothing}
+	cond_type::ConditionType
     scopes::Array{ConditionBlock}
 	assigns::Array{Assign}
 end
@@ -106,4 +118,8 @@ mutable struct CurrentScope
     block::Union{Block,Nothing}
     current::Union{Scope,Nothing}
 	inst_counter
+	signal_counter
+	level
 end
+
+scope = CurrentScope(nothing, nothing, nothing, 0, 0, 0)

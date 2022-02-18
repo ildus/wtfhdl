@@ -3,6 +3,16 @@ import Base.:+
 
 export synth
 
+function add_text(s::String, fmt::String, args...)
+	f = Printf.Format(fmt)
+	return s *= (" " ^ (scope.level * 4)) * Printf.format(f, args...)
+end
+
+function add_line(s::String, fmt::String, args...)
+	f = Printf.Format(fmt)
+	return s *= (" " ^ (scope.level * 4)) * Printf.format(f, args...) * "\n"
+end
+
 function synth(c::Component, b::Union{Bundle, Nothing}=nothing)
 	if c.synthed
 		return ""
@@ -30,31 +40,40 @@ function synth(c::Component, b::Union{Bundle, Nothing}=nothing)
 
 	s *= "module " * c.name * "(\n"
 	for (i, input) in enumerate(c.inputs)
-		s *= "\t input " * synth_def(input)
+		s *= "    input " * synth_def(input)
 		if (i != length(c.inputs) || length(c.outputs) > 0)
 			s *= ","
 		end
 		s *= "\n"
 	end
 	for (i, output) in enumerate(c.outputs)
-		s *= "\t output " * synth_def(output)
+		s *= "    output " * synth_def(output)
 		if (i != length(c.outputs))
 			s *= ","
 		end
 		s *= "\n"
 	end
 	s *= ");\n"
-	for sig in c.signals
-		s *= synth_def(sig)
-		s *= ";\n"
-	end
-	for arr in c.arrays
-		s *= synth(arr)
+
+	if length(c.signals) > 0
 		s *= "\n"
+		for sig in c.signals
+			s = add_line(s, "%s", synth_def(sig))
+		end
 	end
 
-	for b in c.scopes
-		s *= synth(b)
+	if length(c.signals) > 0
+		s *= "\n"
+		for arr in c.arrays
+			s = add_line(s, "%s", synth(arr))
+		end
+	end
+
+	if length(c.signals) > 0
+		s *= "\n"
+		for b in c.scopes
+			s = add_line(s, "%s", synth(b))
+		end
 	end
 
 	# modules
@@ -99,18 +118,19 @@ function synth(b::Block)
 		s *= "always_comb begin\n"
 	end
 
+	scope.level += 1
 	if length(b.assigns) > 0
 		for a in b.assigns
-			s *= synth(a, sync=b.sync)
-			s *= "\n"
+			s = add_line(s, "%s", synth(a, sync=b.sync))
 		end
 	end
 
 	if length(b.scopes) > 0
 		for scope in b.scopes
-			s *= synth(scope)
+			s = add_text(s, "%s", synth(scope))
 		end
 	end
+	scope.level -= 1
 
 	s *= "end\n"
 	return s
@@ -129,7 +149,8 @@ end
 function synth_def(sig::BaseSignal)
 	s = "logic "
 	if sig.name == ""
-		error("signal doesn't have a name!")
+		sig.name = "sig_" * string(scope.signal_counter)
+		scope.signal_counter += 1
 	end
 
 	if sig.width > 1
@@ -137,6 +158,13 @@ function synth_def(sig::BaseSignal)
 	else
 		s *= sig.name
 	end
+
+	if isa(sig, Union{Signal, Output})
+		if sig.default !== nothing
+			s *= " = " * synth(sig.default)
+		end
+	end
+
 	return s
 end
 
@@ -152,11 +180,13 @@ function synth(b::ConditionBlock)
 	s = "if "
 	s *= synth(b.cond)
 	s *= " begin\n"
+
+	scope.level += 1
 	for a in b.assigns
-		s *= synth(a, sync=scope.block.sync)
-		s *= "\n"
+		s = add_line(s, "%s", synth(a, sync=scope.block.sync))
 	end
-	s *= "end\n"
+	scope.level -= 1
+	s = add_line(s, "%s", "end")
 	return s
 end
 
@@ -184,4 +214,22 @@ end
 function synth(arr::SignalArray)
 	s = @sprintf("logic [%d:0] %s [0:%d];", arr.element_width - 1, arr.name, arr.count - 1)
 	return s
+end
+
+function synth(op::Op)
+	s = "("
+	if op.b === nothing
+		s *= op.op
+		s *= synth(op.a)
+	else
+		s *= synth(op.a)
+		s *= " " * op.op * " "
+		s *= synth(op.b)
+	end
+	s *= ")"
+	return s
+end
+
+function synth(n::Number)
+	return string(n)
 end
