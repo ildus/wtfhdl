@@ -4,9 +4,9 @@ function Base.:<=(left::LValue, right::Operand)
 	return a
 end
 
-export ≔
+export ⇐
 
-function ≔(left::LValue, right::Operand)
+function ⇐(left::LValue, right::Operand)
 	left <= right
 end
 

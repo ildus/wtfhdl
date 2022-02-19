@@ -23,30 +23,30 @@ debounce_3pin = component("debounce_3pin", DebounceCtrl) do io
 	io.raised.default = 0
 
 	comb() do
-		out ≔ io.button_in_1 ^ io.button_in_2
-		pinout ≔ pin1 ^ pin2
+		out ⇐ io.button_in_1 ^ io.button_in_2
+		pinout ⇐ pin1 ^ pin2
 	end
 
 	sync(posedge(out)) do
-		pin1 ≔ io.button_in_1
-		pin2 ≔ io.button_in_2
+		pin1 ⇐ io.button_in_1
+		pin2 ⇐ io.button_in_2
 	end
 
 	sync(posedge(io.clk)) do
 		when(!init) do
-			old_pin1 ≔ io.button_in_1
-			old_pin2 ≔ io.button_in_2
-			init ≔ 1
+			old_pin1 ⇐ io.button_in_1
+			old_pin2 ⇐ io.button_in_2
+			init ⇐ 1
 
 			otherwise() do
 				#when(pinout && pin1 != old_pin1 && pin2 != old_pin2) do
 				when(pinout) do
-					io.raised ≔ 1;
-					old_pin1 ≔ pin1;
-					old_pin2 ≔ pin2;
+					io.raised ⇐ 1;
+					old_pin1 ⇐ pin1;
+					old_pin2 ⇐ pin2;
 
 					otherwise() do
-						io.raised ≔ 0;
+						io.raised ⇐ 0;
 					end
 				end
 			end
