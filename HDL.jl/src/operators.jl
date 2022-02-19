@@ -4,22 +4,24 @@ function Base.:<=(left::LValue, right::Operand)
 	return a
 end
 
+export ≔
+
+function ≔(left::LValue, right::Operand)
+	left <= right
+end
+
 function Base.:getindex(left::SignalArray, index::Union{Operand, Number})
-	index = ArrayIndex(left, index)
-	return index
+	ArrayIndex(left, index)
 end
 
 function Base.:^(left::Operand, right::Operand)
-	res = Op(left,right, "^")
-	return res
+	Op(left,right, "^")
 end
 
 function Base.:!(oper::Operand)
-	res = Condition(oper,nothing, "!")
-	return res
+	Condition(oper,nothing, "!")
 end
 
 function Base.:+(left::Operand, right::Operand)
-	res = Op(left, right, "+")
-	return res
+	Op(left, right, "+")
 end
